@@ -59,8 +59,4 @@ public class CSVFileReader {
 		bufRdr.close();
 		return lines.toArray(ret);
 	}
-	
-	public static void main(String args[]) {
-		
-	}
 }
