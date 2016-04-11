@@ -17,9 +17,9 @@ public class HBF {
 		float result = 1;
 		float diff = winnerMMR-loserMMR;
 		float expectedResult = 0.5f;
-		if(diff > 400) expectedResult = 1f;
-		if(diff < -400) expectedResult = 0f;
-		expectedResult = (0.00175f * diff) + 0.5f;
+		if(diff > 285) expectedResult = 1f;
+		else if(diff < -285) expectedResult = 0f;
+		else expectedResult = (0.00175f * diff) + 0.5f;
 		
 		return (int)(30*(result-expectedResult));
 	}
