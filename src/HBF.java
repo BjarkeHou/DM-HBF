@@ -10,9 +10,9 @@ import HBF.Tournament;
 import HBF.User;
 
 public class HBF {
-	private static HashMap<Integer, User> users = new HashMap<Integer, User>();
-	private static HashMap<Integer, Tournament> tournaments = new HashMap<Integer, Tournament>();
-	private static HashMap<Integer, Match> matches = new HashMap<Integer, Match>();
+	public static HashMap<Integer, User> users = new HashMap<Integer, User>();
+	public static HashMap<Integer, Tournament> tournaments = new HashMap<Integer, Tournament>();
+	public static HashMap<Integer, Match> matches = new HashMap<Integer, Match>();
 	private static DBConn db;
 	
 	public static int calculateMMR(int winnerMMR, int loserMMR) {
@@ -29,24 +29,14 @@ public class HBF {
 	public static void updateMMRInMatches(ArrayList<Match> matches) {
 		for(Match m : matches) {
 			if(m.hasWinner()) {
-				User winner1 = users.get(m.getWinner().getPlayer1().id());
-				User winner2 = users.get(m.getWinner().getPlayer2().id());
-				User loser1 = users.get(m.getLoser().getPlayer1().id());
-				User loser2 = users.get(m.getLoser().getPlayer2().id());
-				
-				int winnerTeamMMR = (winner1.getMMR() + winner2.getMMR()) / 2;
-				int loserTeamMMR = (loser1.getMMR() + loser2.getMMR()) / 2;
+				int winnerTeamMMR = (m.getWinner().getPlayer1().getMMR() + m.getWinner().getPlayer2().getMMR()) / 2;
+				int loserTeamMMR = (m.getLoser().getPlayer1().getMMR() + m.getLoser().getPlayer2().getMMR()) / 2;
 				int mmrChange = calculateMMR(winnerTeamMMR, loserTeamMMR);
 				
-				winner1.adjustMMR(mmrChange);
-				winner2.adjustMMR(mmrChange);
-				loser1.adjustMMR(-mmrChange);
-				loser2.adjustMMR(-mmrChange);
-				
-				users.put(winner1.id(), winner1);
-				users.put(winner2.id(), winner2);
-				users.put(loser1.id(), loser1);
-				users.put(loser2.id(), loser2);
+				m.getWinner().getPlayer1().adjustMMR(mmrChange);
+				m.getWinner().getPlayer2().adjustMMR(mmrChange);
+				m.getLoser().getPlayer1().adjustMMR(-mmrChange);
+				m.getLoser().getPlayer2().adjustMMR(-mmrChange);
 			}
 		}
 	}
@@ -56,21 +46,26 @@ public class HBF {
 		db = new DBConn();
 		if(!db.connect()) return;
 		
+		// Important order of calls:
+		// 1. Users
+		// 2. Matches
+		// 3. Tournaments
+		
 		for(User u : db.getUsers()) {
 			users.put(u.id(), u);
-		}
-		
-		for(Tournament t : db.getTournaments()) {
-			tournaments.put(t.id(), t);
 		}
 		
 		for(Match m : db.getMatches()) {
 			matches.put(m.id(), m);
 		}
 		
+		for(Tournament t : db.getTournaments()) {
+			tournaments.put(t.id(), t);
+		}
+		
 		System.out.println("Number of users: " + users.size());
-		System.out.println("Number of tournaments: " + tournaments.size());
 		System.out.println("Number of matches: " + matches.size());
+		System.out.println("Number of tournaments: " + tournaments.size());
 		
 		for(Map.Entry<Integer, Tournament> entry : tournaments.entrySet()) {
 			Tournament t = entry.getValue();

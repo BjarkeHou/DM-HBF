@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 
 import HBF.Match;
 import HBF.Team;
@@ -53,8 +54,9 @@ public class DBConn {
 			ResultSet rs = stmt.executeQuery(query);
 			
 			while(rs.next()) {
-				return new User(rs.getInt("bruger_id"), rs.getString("navn"));
-				
+				if(HBF.users.containsKey(rs.getInt("bruger_id")))
+					return HBF.users.get(rs.getInt("bruger_id"));
+				//return new User(rs.getInt("bruger_id"), rs.getString("navn"));
 			}
 		} catch (SQLException e) {
 			// TODO: handle exception
@@ -86,45 +88,26 @@ public class DBConn {
 			
 			for(Tournament t : returnValue) {
 				t.addMatches(getMatchesInTorunament(t.id()));
-				//t.addTeams(getTeamsInTournament(t.id()));
+				t.addTeams(getTeamsInTournament(t.id()));
 			}
 			
 			
 		} catch (SQLException e) {
 			// TODO: handle exception
 		}
-		System.out.println("Number of invalid matches from getTournaments: " + numberOfInvalidtMatches);
-		numberOfInvalidtMatches = 0;
 		return returnValue;
 	}
 	
 	public ArrayList<Match> getMatchesInTorunament(int tournament_id) {
 		
 		ArrayList<Match> returnValue = new ArrayList<Match>();
-		String query = "SELECT kamp_id, hold1, hold2, resultat1, resultat2, type FROM hbf_kampe WHERE turnerings_id = " + tournament_id;
-		try {
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			
-			while(rs.next()) {
-				int match_id = rs.getInt("kamp_id");
-				Team team1 = getTeam(tournament_id, rs.getInt("hold1"));
-//				if(team1 == null) System.out.println("Team1 null");
-				Team team2 = getTeam(tournament_id, rs.getInt("hold2"));
-//				if(team2 == null) System.out.println("Team2 null");
-				String type = rs.getString("type");
-				
-				if(team1 == null || team2 == null) {
-					numberOfInvalidtMatches++;
-					continue;
-				}
-				Match m = new Match(match_id, tournament_id, Match.toMatchType(type), team1, team2);
-				m.setResult(rs.getInt("resultat1"), rs.getInt("resultat2"));
+		
+		for(Map.Entry<Integer, Match> entry : HBF.matches.entrySet()) {
+			Match m = entry.getValue();
+			if(m.getTournamentId() == tournament_id)
 				returnValue.add(m);
-			}
-		} catch (SQLException e) {
-			// TODO: handle exception
 		}
+
 		return returnValue;
 	}
 	
