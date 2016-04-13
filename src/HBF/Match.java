@@ -5,6 +5,8 @@ public class Match {
 	
 	private MatchType type;
 	
+	private int tournamentId;
+	
 	private Team team1;
 	private Team team2;
 	
@@ -14,18 +16,19 @@ public class Match {
 	private boolean played = false;
 	
 	public static MatchType toMatchType(String type) {
-		if(type == "p") return MatchType.SEEDINGMATCH;
-		if(type == "k") return MatchType.QUARTERFINALE;
-		if(type == "s") return MatchType.SEMIFINAL;
-		if(type == "f") return MatchType.FINAL;
-		if(type == "jk") return MatchType.JAYS_QUARTERFINAL;
-		if(type == "js") return MatchType.JAYS_SEMIFINAL;
-		if(type == "jf") return MatchType.JAYS_FINAL;
+		if(type.equals("p")) return MatchType.SEEDINGMATCH;
+		if(type.equals("k")) return MatchType.QUARTERFINALE;
+		if(type.equals("s")) return MatchType.SEMIFINAL;
+		if(type.equals("f")) return MatchType.FINAL;
+		if(type.equals("jk")) return MatchType.JAYS_QUARTERFINAL;
+		if(type.equals("js")) return MatchType.JAYS_SEMIFINAL;
+		if(type.equals("jf")) return MatchType.JAYS_FINAL;
 		return null;
 	}
 	
-	public Match(int id, MatchType type, Team t1, Team t2) {
+	public Match(int id, int tournamentId, MatchType type, Team t1, Team t2) {
 		this.id = id;
+		this.tournamentId = tournamentId;
 		this.type = type;
 		team1 = t1;
 		team2 = t2;
@@ -37,6 +40,10 @@ public class Match {
 	
 	public int id() {
 		return id;
+	}
+	
+	public int getTournamentId() {
+		return tournamentId;
 	}
 	
 	public void setResult(int t1Score, int t2Score) {
@@ -65,5 +72,23 @@ public class Match {
 			if(team2Score < team1Score) return team2;
 		}
 		return null;
+	}
+	
+	public boolean hasUser(int userId) {
+		if(
+				team1.hasUser(userId) ||
+				team2.hasUser(userId)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean didUserWin(int userId) throws Exception {
+		if(hasUser(userId)) {
+			return getWinner().hasUser(userId);
+		} else {
+			throw new Exception("User not in match");
+		}
 	}
 }

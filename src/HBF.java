@@ -1,8 +1,9 @@
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import HBF.Match;
 import HBF.Tournament;
@@ -11,6 +12,7 @@ import HBF.User;
 public class HBF {
 	private static HashMap<Integer, User> users = new HashMap<Integer, User>();
 	private static HashMap<Integer, Tournament> tournaments = new HashMap<Integer, Tournament>();
+	private static HashMap<Integer, Match> matches = new HashMap<Integer, Match>();
 	private static DBConn db;
 	
 	public static int calculateMMR(int winnerMMR, int loserMMR) {
@@ -50,6 +52,7 @@ public class HBF {
 	}
 	
 	public static void main(String args[]) {
+		Date startTime = new Date();
 		db = new DBConn();
 		if(!db.connect()) return;
 		
@@ -61,7 +64,13 @@ public class HBF {
 			tournaments.put(t.id(), t);
 		}
 		
-		System.out.println("Number of tournaments: "+tournaments.size());
+		for(Match m : db.getMatches()) {
+			matches.put(m.id(), m);
+		}
+		
+		System.out.println("Number of users: " + users.size());
+		System.out.println("Number of tournaments: " + tournaments.size());
+		System.out.println("Number of matches: " + matches.size());
 		
 		for(Map.Entry<Integer, Tournament> entry : tournaments.entrySet()) {
 			Tournament t = entry.getValue();
@@ -74,5 +83,12 @@ public class HBF {
 			System.out.println(u.getName() + "\t"+u.getMMR());
 		}
 		
+		
+		long timeSpent = new Date().getTime() - startTime.getTime();
+		System.out.println("\nTime: " + String.format("%02d min, %02d sec", 
+			    TimeUnit.MILLISECONDS.toMinutes(timeSpent),
+			    TimeUnit.MILLISECONDS.toSeconds(timeSpent) - 
+			    TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeSpent))
+			));
 	}
 }

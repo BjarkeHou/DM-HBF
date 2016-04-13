@@ -24,4 +24,10 @@ public class Team {
 	public User getPlayer2() {
 		return player2;
 	}
+	
+	public boolean hasUser(int userId) {
+		if(player1.id() == userId || player2.id() == userId) 
+			return true;
+		else return false;
+	}
 }

@@ -93,7 +93,8 @@ public class DBConn {
 		} catch (SQLException e) {
 			// TODO: handle exception
 		}
-		System.out.println("Number of invalid matches: " + numberOfInvalidtMatches);
+		System.out.println("Number of invalid matches from getTournaments: " + numberOfInvalidtMatches);
+		numberOfInvalidtMatches = 0;
 		return returnValue;
 	}
 	
@@ -117,13 +118,46 @@ public class DBConn {
 					numberOfInvalidtMatches++;
 					continue;
 				}
-				Match m = new Match(match_id, Match.toMatchType(type), team1, team2);
+				Match m = new Match(match_id, tournament_id, Match.toMatchType(type), team1, team2);
 				m.setResult(rs.getInt("resultat1"), rs.getInt("resultat2"));
 				returnValue.add(m);
 			}
 		} catch (SQLException e) {
 			// TODO: handle exception
 		}
+		return returnValue;
+	}
+	
+	public ArrayList<Match> getMatches() {
+		
+		ArrayList<Match> returnValue = new ArrayList<Match>();
+		String query = "SELECT kamp_id, turnerings_id, hold1, hold2, resultat1, resultat2, type FROM hbf_kampe";
+		try {
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			
+			while(rs.next()) {
+				int match_id = rs.getInt("kamp_id");
+				Team team1 = getTeam(rs.getInt("turnerings_id"), rs.getInt("hold1"));
+//				if(team1 == null) System.out.println("Team1 null");
+				Team team2 = getTeam(rs.getInt("turnerings_id"), rs.getInt("hold2"));
+//				if(team2 == null) System.out.println("Team2 null");
+				String type = rs.getString("type");
+				
+				if(team1 == null || team2 == null) {
+					numberOfInvalidtMatches++;
+					continue;
+				}
+				Match m = new Match(match_id, rs.getInt("turnerings_id"), Match.toMatchType(type), team1, team2);
+				m.setResult(rs.getInt("resultat1"), rs.getInt("resultat2"));
+				returnValue.add(m);
+			}
+		} catch (SQLException e) {
+			// TODO: handle exception
+		}
+		
+		System.out.println("Number of invalid matches from getMatches: " + numberOfInvalidtMatches);
+		numberOfInvalidtMatches = 0;
 		return returnValue;
 	}
 	
@@ -156,6 +190,7 @@ public class DBConn {
 			while(rs.next()) {
 				User p1 = getUser(rs.getInt("spiller"));
 				User p2 = getUser(rs.getInt("medspiller"));
+				if(p1 == null || p2 == null) return null;
 				returnValue.add(new Team(p1, p2));
 			}
 			
