@@ -85,6 +85,7 @@ public class Match {
 	}
 	
 	public boolean didUserWin(int userId) throws Exception {
+		if(!hasWinner()) return false;
 		if(hasUser(userId)) {
 			return getWinner().hasUser(userId);
 		} else {

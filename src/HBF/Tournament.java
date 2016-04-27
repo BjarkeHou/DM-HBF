@@ -63,4 +63,12 @@ public class Tournament {
 	public Date getDate() {
 		return date;
 	}
+	
+	public boolean hasUser(int userId) {
+		for(Team t : teams) {
+			if(t.hasUser(userId))
+				return true;
+		}
+		return false;
+	}
 }

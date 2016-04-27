@@ -26,6 +26,8 @@ public class Team {
 	}
 	
 	public boolean hasUser(int userId) {
+		if(player1 == null || player2 == null) return false;
+	
 		if(player1.id() == userId || player2.id() == userId) 
 			return true;
 		else return false;

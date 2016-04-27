@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,11 +7,17 @@ import java.util.concurrent.TimeUnit;
 import HBF.Match;
 import HBF.Tournament;
 import HBF.User;
+import KNN.KNN;
+import KNN.Player;
+import KNN.TournamentResult;
+import KNN.WeekDay;
 
 public class HBF {
 	public static HashMap<Integer, User> users = new HashMap<Integer, User>();
 	public static HashMap<Integer, Tournament> tournaments = new HashMap<Integer, Tournament>();
 	public static HashMap<Integer, Match> matches = new HashMap<Integer, Match>();
+	
+	public static HashMap<Integer, Integer> lostToArm = new HashMap<Integer, Integer>();
 	private static DBConn db;
 	
 	public static int calculateMMR(int winnerMMR, int loserMMR) {
@@ -41,7 +46,7 @@ public class HBF {
 		}
 	}
 	
-	public static void main(String args[]) {
+	public static void main(String args[]) throws Exception {
 		Date startTime = new Date();
 		db = new DBConn();
 		if(!db.connect()) return;
@@ -67,15 +72,117 @@ public class HBF {
 		System.out.println("Number of matches: " + matches.size());
 		System.out.println("Number of tournaments: " + tournaments.size());
 		
+		ArrayList<int[]> participants = new ArrayList<int[]>();
+		
+		ArrayList<Float> bjarkeWinRates = new ArrayList<Float>();
+		
 		for(Map.Entry<Integer, Tournament> entry : tournaments.entrySet()) {
 			Tournament t = entry.getValue();
 			updateMMRInMatches(t.getMatches());
+			
+//			if(t.hasUser(986)) {
+//				int numberOfMatches = 0;
+//				int numberOfWins = 0;
+//				
+//				for(Match m : t.getMatches()) {
+//					if(m.hasUser(986) && m.hasWinner()) {
+//						numberOfMatches++;
+//						if(m.didUserWin(986)) {
+//							numberOfWins++;
+//						}
+//					}
+//				}
+//				
+//				bjarkeWinRates.add((float)numberOfWins/numberOfMatches);
+//			}
+			
+//			// APRIORI DATA PREPARATION 
+//			if(t.getDate().before(new Date(115, 1, 1)) && t.getDate().getDay() != 2) continue;
+//			int[] parts = new int[t.getTeams().size()*2];
+//			for(int i = 0; i < parts.length; i+=2) {
+//				parts[i] = t.getTeams().get(i/2).getPlayer1().id();
+//				parts[i+1] = t.getTeams().get(i/2).getPlayer2().id();
+//				
+//				
+//				
+//			}
+//			Arrays.sort(parts);
+//			//System.out.println(Arrays.toString(parts));
+//			participants.add(parts);
 		}
+		
+//		for(Map.Entry<Integer, Integer> entry : lostToArm.entrySet()) {
+//			int numberOfLosses = entry.getValue();
+//			String name = users.get(entry.getKey()).getName();
+//			
+//			System.out.println(numberOfLosses + " - " + name);
+//		}
+		
+//		for(Map.Entry<String, Integer> entry : db.getELOChangesForUser(986).entrySet()) {
+//			System.out.println(entry.getKey() + " - " + entry.getValue());
+//		}
 				
-		ArrayList<User> sortedRatingList = new ArrayList<User>(users.values());
-		Collections.sort(sortedRatingList);
-		for(User u : sortedRatingList) {
-			System.out.println(u.getName() + "\t"+u.getMMR());
+//		ArrayList<User> sortedRatingList = new ArrayList<User>(users.values());
+//		Collections.sort(sortedRatingList);
+//		for(User u : sortedRatingList) {
+//			if(u.getMMR() != 1200)
+//				System.out.println(u.getName() + "\t"+u.getMMR());
+//		}
+		
+		
+		////////////////////////////////////////////////////////
+		////////////////         APRIORI         ///////////////
+		////////////////////////////////////////////////////////	
+//		System.out.println("Participants size = " + participants.size());
+//		Apriori apriori = new Apriori();
+//		List<ItemSet> result = apriori.apriori(participants.toArray(new int[participants.size()][]), 10.0f);
+//		for(ItemSet set : result) {
+//			System.out.print("#"+set.getOccurenses());
+//			for(int id : set.set) {
+//				System.out.print(" - " + users.get(id).getName());
+//			}
+//			System.out.println();
+//		}
+		
+//		for(float winRate : bjarkeWinRates) {
+//			System.out.println(winRate);
+//		}
+		
+		
+		////////////////////////////////////////////////////////
+		////////////////           KNN           ///////////////
+		////////////////////////////////////////////////////////
+		String[][] data = CSVFileReader.readDataFile("ratinghistory_turneringer.csv",";", "-",true);
+		int k = 15;
+		int numberOfTournaments = 15;
+		KNN kNN = new KNN();
+		ArrayList<Player> players = new ArrayList<Player>();
+		Player testPlayer = null;
+		for(int i = 0; i < data.length; i++) {
+			if(i+numberOfTournaments >= data.length) break;
+			if(players.size() > 0)
+				if(Integer.parseInt(data[i][0]) == players.get(players.size()-1).id) continue;
+			
+			// New Player
+			if(Integer.parseInt(data[i][0]) == Integer.parseInt(data[i+numberOfTournaments][0])) {
+				// Player has required number of tournaments
+				TournamentResult[] tr = new TournamentResult[numberOfTournaments];
+				for(int j = 0; j < numberOfTournaments; j++) {
+					tr[j] = new TournamentResult(Integer.parseInt(data[i+j][4]), Integer.parseInt(data[i+j][3]));
+				}
+				
+				if(Integer.parseInt(data[i][0]) == 986) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR());
+				else players.add(new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR()));
+			}
+		}
+		
+		kNN.init(players, k);
+		
+		int[] ids = kNN.calc(testPlayer);
+		for(int id : ids) {
+			System.out.println("-----------------------------------");
+			System.out.println("Navn: " + users.get(id).getName());
+			System.out.println("MMR: " + users.get(id).getMMR());
 		}
 		
 		

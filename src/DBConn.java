@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import HBF.Match;
@@ -66,7 +67,7 @@ public class DBConn {
 	
 	public ArrayList<Tournament> getTournaments() {
 		ArrayList<Tournament> returnValue = new ArrayList<Tournament>();
-		String query = "SELECT turnering_id, date, point FROM hbf_turnering";
+		String query = "SELECT turnering_id, date, point FROM valid_tournaments ORDER BY date ASC";
 		try {
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery(query);
@@ -114,7 +115,7 @@ public class DBConn {
 	public ArrayList<Match> getMatches() {
 		
 		ArrayList<Match> returnValue = new ArrayList<Match>();
-		String query = "SELECT kamp_id, turnerings_id, hold1, hold2, resultat1, resultat2, type FROM hbf_kampe";
+		String query = "SELECT kamp_id, turnerings_id, hold1, hold2, resultat1, resultat2, type FROM all_valid_matches";
 		try {
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery(query);
@@ -141,6 +142,31 @@ public class DBConn {
 		
 		System.out.println("Number of invalid matches from getMatches: " + numberOfInvalidtMatches);
 		numberOfInvalidtMatches = 0;
+		return returnValue;
+	}
+	
+public HashMap<String, Integer> getELOChangesForUser(int userId) {
+		
+		HashMap<String, Integer> returnValue = new HashMap<String, Integer>();
+		String query = "SELECT maaned, points FROM rating_history_monthly WHERE bruger_id = " + userId + " ORDER BY maaned ASC";
+		try {
+			Statement stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery(query);
+			
+			while(rs.next()) {
+				int eloChange = rs.getInt("points");
+				String yearMonth = rs.getString("maaned");
+				String year = yearMonth.substring(0, 4);
+				String month = yearMonth.substring(5, 7);
+				
+				//Date date = new Date(Integer.parseInt(year)-1900, Integer.parseInt(month), 1);
+				
+				returnValue.put(yearMonth, eloChange);
+			}
+		} catch (SQLException e) {
+			// TODO: handle exception
+		}
+		
 		return returnValue;
 	}
 	
@@ -173,7 +199,7 @@ public class DBConn {
 			while(rs.next()) {
 				User p1 = getUser(rs.getInt("spiller"));
 				User p2 = getUser(rs.getInt("medspiller"));
-				if(p1 == null || p2 == null) return null;
+				if(p1 == null || p2 == null) continue;
 				returnValue.add(new Team(p1, p2));
 			}
 			
