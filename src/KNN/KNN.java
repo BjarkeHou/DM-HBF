@@ -13,17 +13,21 @@ public class KNN {
 		this.k = k;
 	}
 	
-	public int[] calc(Player player) {
+	public int[][] calc(Player player) {
 		ArrayList<Result> results = new ArrayList<Result>();
 		for(Player point : data) {
 			results.add(distanceBetween(point, player));
 		}
 		results.sort(new DistanceComparator());
 		
-		int[] ids = new int[k];
+		int[][] ids = new int[k+1][3];
 		for(int i = 0; i < k; i++) {
-			ids[i] = results.get(i).id;
+			ids[i][0] = results.get(i).id;
+			ids[i][1] = (int)results.get(i).distance;
+			ids[i][2] = results.get(i).MMR;
 		}
+		ids[k][0] = results.get(results.size()-1).id;
+		ids[k][0] = (int)results.get(results.size()-1).distance;
 		
 		return ids;
 	}
@@ -34,7 +38,7 @@ public class KNN {
 		double temp = 0;
 		for(int i = 0; i < to.tournaments.length; i++) {
 			temp += Math.pow(to.tournaments[i].mmrChange-from.tournaments[i].mmrChange, 2);
-			temp += Math.pow(to.tournaments[i].day-from.tournaments[i].day, 2);
+			//temp += Math.pow(to.tournaments[i].day-from.tournaments[i].day, 2);
 		}
 		
 		double dist = Math.sqrt(temp);

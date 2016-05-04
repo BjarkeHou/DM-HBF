@@ -153,36 +153,55 @@ public class HBF {
 		////////////////           KNN           ///////////////
 		////////////////////////////////////////////////////////
 		String[][] data = CSVFileReader.readDataFile("ratinghistory_turneringer.csv",";", "-",true);
-		int k = 15;
+		int k = 5;
 		int numberOfTournaments = 15;
+		int predictAfter = 30;
+		
 		KNN kNN = new KNN();
 		ArrayList<Player> players = new ArrayList<Player>();
 		Player testPlayer = null;
 		for(int i = 0; i < data.length; i++) {
-			if(i+numberOfTournaments >= data.length) break;
+			if(i+predictAfter >= data.length) break;
 			if(players.size() > 0)
 				if(Integer.parseInt(data[i][0]) == players.get(players.size()-1).id) continue;
 			
 			// New Player
-			if(Integer.parseInt(data[i][0]) == Integer.parseInt(data[i+numberOfTournaments][0])) {
+			if(Integer.parseInt(data[i][0]) == Integer.parseInt(data[i+predictAfter][0])) {
 				// Player has required number of tournaments
 				TournamentResult[] tr = new TournamentResult[numberOfTournaments];
 				for(int j = 0; j < numberOfTournaments; j++) {
 					tr[j] = new TournamentResult(Integer.parseInt(data[i+j][4]), Integer.parseInt(data[i+j][3]));
 				}
 				
-				if(Integer.parseInt(data[i][0]) == 986) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR());
-				else players.add(new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR()));
+				if(Integer.parseInt(data[i][0]) == 427) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter));
+//				if(Integer.parseInt(data[i][0]) == 986) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR());
+				else players.add(new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter)));
 			}
 		}
 		
 		kNN.init(players, k);
 		
-		int[] ids = kNN.calc(testPlayer);
-		for(int id : ids) {
+		int[][] ids = kNN.calc(testPlayer);
+		System.out.println("-----------------------------------");
+		System.out.println("ID: " + testPlayer.id);
+		System.out.println("Navn: " + testPlayer.name);
+		System.out.println("MMR: " + testPlayer.presentMMR);
+		System.out.println("-----------------------------------");
+		
+		int avgMMR = 0;
+		for(int i = 0; i < 5; i++) {
+			avgMMR += ids[i][2];
+		}
+		avgMMR /= 5;
+		System.out.println("Predicted MMR: " + avgMMR);
+		
+		for(int[] id : ids) {
 			System.out.println("-----------------------------------");
-			System.out.println("Navn: " + users.get(id).getName());
-			System.out.println("MMR: " + users.get(id).getMMR());
+			System.out.println("ID: " + id[0]);
+			System.out.println("Distance: " + id[1]);
+			System.out.println("Navn: " + users.get(id[0]).getName());
+			System.out.println("MMR: " + id[2]);
+			
 		}
 		
 		
@@ -192,5 +211,13 @@ public class HBF {
 			    TimeUnit.MILLISECONDS.toSeconds(timeSpent) - 
 			    TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(timeSpent))
 			));
+	}
+	
+	public static int calcMMRForTournaments(String[][] data, int index, int numberOfTournaments) {
+		int returnValue = 1200;
+		for(int i = 0; i < numberOfTournaments; i++) {
+			returnValue += Integer.parseInt(data[index+i][4]);
+		}
+		return returnValue;
 	}
 }
