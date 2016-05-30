@@ -153,17 +153,29 @@ public class HBF {
 		////////////////           KNN           ///////////////
 		////////////////////////////////////////////////////////
 		String[][] data = CSVFileReader.readDataFile("ratinghistory_turneringer.csv",";", "-",true);
-		int k = 5;
+		int k = 15;
 		int numberOfTournaments = 15;
-		int predictAfter = 30;
+		int predictAfter = 20;
+		
+		int maxEarnedOnTournaments = 0;
 		
 		KNN kNN = new KNN();
 		ArrayList<Player> players = new ArrayList<Player>();
-		Player testPlayer = null;
+
 		for(int i = 0; i < data.length; i++) {
 			if(i+predictAfter >= data.length) break;
+			if(Integer.parseInt(data[i][0]) == 1) continue;
 			if(players.size() > 0)
 				if(Integer.parseInt(data[i][0]) == players.get(players.size()-1).id) continue;
+			
+//			if(Integer.parseInt(data[i][0]) == Integer.parseInt(data[i+predictAfter][0])) {
+//				int temp = 0;
+//				for(int j = 0; j < 5; j++) {
+//					temp += Math.abs(Integer.parseInt(data[i+j][4]));
+//				}
+//				
+//				if(temp > maxEarnedOnTournaments) maxEarnedOnTournaments = temp;
+//			}
 			
 			// New Player
 			if(Integer.parseInt(data[i][0]) == Integer.parseInt(data[i+predictAfter][0])) {
@@ -173,36 +185,55 @@ public class HBF {
 					tr[j] = new TournamentResult(Integer.parseInt(data[i+j][4]), Integer.parseInt(data[i+j][3]));
 				}
 				
-				if(Integer.parseInt(data[i][0]) == 427) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter));
+//				if(Integer.parseInt(data[i][0]) == 427) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter));
 //				if(Integer.parseInt(data[i][0]) == 986) testPlayer = new Player(Integer.parseInt(data[i][0]), tr, users.get(Integer.parseInt(data[i][0])).getMMR());
-				else players.add(new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter)));
+//				else 
+					players.add(new Player(Integer.parseInt(data[i][0]), tr, calcMMRForTournaments(data, i, predictAfter)));
 			}
 		}
 		
 		kNN.init(players, k);
 		
-		int[][] ids = kNN.calc(testPlayer);
-		System.out.println("-----------------------------------");
-		System.out.println("ID: " + testPlayer.id);
-		System.out.println("Navn: " + testPlayer.name);
-		System.out.println("MMR: " + testPlayer.presentMMR);
-		System.out.println("-----------------------------------");
+		int maxDiff = Integer.MIN_VALUE;
+		double avgDiff = 0;
+		double variance = 0; 
 		
-		int avgMMR = 0;
-		for(int i = 0; i < 5; i++) {
-			avgMMR += ids[i][2];
-		}
-		avgMMR /= 5;
-		System.out.println("Predicted MMR: " + avgMMR);
-		
-		for(int[] id : ids) {
+		for(Player p : players) {
+			int[][] ids = kNN.calc(p);
 			System.out.println("-----------------------------------");
-			System.out.println("ID: " + id[0]);
-			System.out.println("Distance: " + id[1]);
-			System.out.println("Navn: " + users.get(id[0]).getName());
-			System.out.println("MMR: " + id[2]);
+			System.out.println("ID: " + p.id);
+			System.out.println("Navn: " + p.name);
+			System.out.println("MMR: " + p.presentMMR);
 			
+			int predictedMMR = 0;
+			for(int i = 0; i < k; i++) {
+				predictedMMR += ids[i][2];
+			}
+			predictedMMR /= k;
+			System.out.println("Predicted MMR: " + predictedMMR);
+			System.out.println("-----------------------------------");
+			
+			int deviation = Math.abs(predictedMMR-p.presentMMR); 
+			if(maxDiff < deviation) maxDiff = deviation;
+			avgDiff += deviation;
+			variance += Math.pow(predictedMMR-p.presentMMR, 2);
 		}
+		
+		avgDiff /= players.size();
+		variance = Math.sqrt(variance/players.size());
+		System.out.println("Average deviation = " + avgDiff);
+		System.out.println("Max deviation = " + maxDiff);
+		System.out.println("Standard Deviation = " + variance);
+		System.out.println("Max earned on 5 tournaments: " + maxEarnedOnTournaments);
+		
+//		for(int[] id : ids) {
+//			System.out.println("-----------------------------------");
+//			System.out.println("ID: " + id[0]);
+//			System.out.println("Distance: " + id[1]);
+//			System.out.println("Navn: " + users.get(id[0]).getName());
+//			System.out.println("MMR: " + id[2]);
+//			
+//		}
 		
 		
 		long timeSpent = new Date().getTime() - startTime.getTime();

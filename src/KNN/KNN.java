@@ -16,7 +16,8 @@ public class KNN {
 	public int[][] calc(Player player) {
 		ArrayList<Result> results = new ArrayList<Result>();
 		for(Player point : data) {
-			results.add(distanceBetween(point, player));
+			if(point.id != player.id)
+				results.add(distanceBetween(point, player));
 		}
 		results.sort(new DistanceComparator());
 		
